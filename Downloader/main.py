@@ -92,7 +92,7 @@ class DownloaderApp:
         messagebox.showinfo(
             "About Universal Downloader",
             "Universal Downloader App v1.0\n\n"
-            "Developed by Gemini\n"
+            "Developed by Dannz\n"
             "This application allows you to download videos, audio, and images from various online sources."
         )
 
