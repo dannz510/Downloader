@@ -44,14 +44,6 @@ A simple yet feature-rich desktop painting application built with Python's Tkint
 * **Responsive UI:** Adapts to window resizing.
 * **Status Bar:** Provides real-time feedback on cursor coordinates, selection size, zoom level, and tool messages.
 
-## 📸 Screenshots
-
-*(To make your GitHub README truly stand out, replace this text with actual screenshots of your application in action. Show different tools, themes, and features!)*
-
-Example:
-![Screenshot of the app's main window in dark theme](path/to/your/screenshot1.png)
-![Screenshot of the app with a drawing and light theme](path/to/your/screenshot2.png)
-
 ## 🚀 Installation
 
 1.  **Clone the repository:**
