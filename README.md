@@ -105,15 +105,15 @@ A simple yet feature-rich desktop painting application built with Python's Tkint
 
 ## 📸 Screenshots
 
-[img1](img1.png)
+[img1](/img1.png)
 _A clear view of the Universal Downloader's main interface with the dark theme enabled._
-[img2](img2.png)
+[img2](/img2.png)
 _Tools tab_
-[img3](img3.png)
+[img3](/img3.png)
 _Shape tab_
-[img4](img4.png)
+[img4](/img4.png)
 _Colors tab_
-[img5](img5.png)
+[img5](/img5.png)
 _Images import tab_
 
 ## 🤝 Contributing
