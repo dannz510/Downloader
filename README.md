@@ -44,6 +44,23 @@ A simple yet feature-rich desktop painting application built with Python's Tkint
 * **Responsive UI:** Adapts to window resizing.
 * **Status Bar:** Provides real-time feedback on cursor coordinates, selection size, zoom level, and tool messages.
 
+## 📸 Screenshots
+
+![Main window in dark theme](img1.png)
+_A clear view of the Universal Downloader's main interface with the dark theme enabled._
+
+![Tools tab](img2.png)
+_Overview of the various drawing tools available in the app._
+
+![Shapes tab](img3.png)
+_Demonstration of the different shapes that can be drawn, including the fill option._
+
+![Colors tab](img4.png)
+_The color selection interface, showing the color picker and palette._
+
+![Images import tab](img5.png)
+_The section for importing and transforming images on the canvas._
+
 ## 🚀 Installation
 
 1.  **Clone the repository:**
@@ -102,19 +119,6 @@ A simple yet feature-rich desktop painting application built with Python's Tkint
 * **Default Brush Size:** The application remembers your last used brush size.
 * **Gridlines & Rulers:** Toggle their visibility from the "View" section.
 * **`paint_settings.json`:** The application saves user preferences (theme, default brush size, canvas background, grid/ruler visibility) in a `paint_settings.json` file in the application directory. You can manually edit this file, but it's generally recommended to use the in-app settings.
-
-## 📸 Screenshots
-
-[img1](/img1.png)
-_A clear view of the Universal Downloader's main interface with the dark theme enabled._
-[img2](/img2.png)
-_Tools tab_
-[img3](/img3.png)
-_Shape tab_
-[img4](/img4.png)
-_Colors tab_
-[img5](/img5.png)
-_Images import tab_
 
 ## 🤝 Contributing
 
