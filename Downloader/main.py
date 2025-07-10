@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
 import threading
+import json # For saving/loading settings
 from downloader_core import DownloadManager # Import the DownloadManager
 from PIL import Image, ImageTk # Import Pillow for icons
 
@@ -12,7 +13,7 @@ class DownloaderApp:
         master.geometry("900x700") # Slightly larger default size
         master.minsize(700, 550) # Set a minimum size for better layout
         master.resizable(True, True)
-        master.configure(bg="#e8f0f7") # Lighter, softer blue-gray background
+        master.configure(bg="#e8f0f7") # Lightest background by default
 
         self.download_manager = DownloadManager(
             progress_callback=self.update_progress,
@@ -23,6 +24,42 @@ class DownloaderApp:
         self.output_directory = os.path.join(os.path.expanduser("~"), "Downloads", "UniversalDownloads")
         os.makedirs(self.output_directory, exist_ok=True) # Ensure default download directory exists
 
+        # --- Settings Variables ---
+        self.settings_file = "downloader_settings.json"
+        self.current_theme = tk.StringVar(value="light") # Default theme
+        self.download_quality_var = tk.StringVar(value="best") # Default quality
+        self.themes = {
+            "light": {
+                "bg_app": "#e8f0f7",      # Very light blue-gray for main window
+                "bg_frame": "#dbe9f5",     # Slightly darker for frames
+                "bg_accent": "#c3d9eb",       # Even darker for some accents
+                "text_primary": "#2c3e50",     # Dark blue-gray for main text
+                "text_light": "#ffffff",    # White for text on dark backgrounds
+                "button_primary": "#3498db",  # Standard blue for buttons/accents
+                "button_hover": "#2980b9", # Darker blue for hover
+                "success": "#2ecc71", # Green for success/progress
+                "error": "#e74c3c",     # Red for errors
+                "border": "#a7b8c9",  # Soft border color
+                "input_bg": "#ffffff",      # White for input fields
+                "log_bg": "#fdfefe",        # Off-white for log background
+            },
+            "dark": {
+                "bg_app": "#2c3e50",      # Dark blue-gray for main window
+                "bg_frame": "#34495e",     # Slightly lighter for frames
+                "bg_accent": "#4a627a",       # Even lighter for some accents
+                "text_primary": "#ecf0f1",     # Light gray for main text
+                "text_light": "#ffffff",    # White for text on dark backgrounds
+                "button_primary": "#3498db",  # Standard blue for buttons/accents
+                "button_hover": "#2980b9", # Darker blue for hover
+                "success": "#2ecc71", # Green for success/progress
+                "error": "#e74c3c",     # Red for errors
+                "border": "#1a242c",  # Dark border color
+                "input_bg": "#3f546a",      # Darker input fields
+                "log_bg": "#3f546a",        # Darker log background
+            }
+        }
+        self.load_settings() # Load settings before creating widgets
+
         # Load icons (ensure icon_generate.py has been run)
         self.icons = {}
         self._load_icons()
@@ -31,17 +68,48 @@ class DownloaderApp:
 
         self.create_menu() # Create menu bar
         self.create_widgets()
-        self.apply_styles() # Apply styles after widgets are created
+        self.apply_styles() # Apply styles after widgets are created and settings loaded
 
         # Add a variable to track the last logged percentage to avoid duplicate log entries
         self._last_logged_percent = -1 
+        self.download_manager.set_download_quality(self.download_quality_var.get()) # Set initial quality in manager
+
+
+    def load_settings(self):
+        """Loads application settings from a JSON file."""
+        try:
+            if os.path.exists(self.settings_file):
+                with open(self.settings_file, "r") as f:
+                    settings = json.load(f)
+                    self.current_theme.set(settings.get("theme", "light"))
+                    self.download_quality_var.set(settings.get("download_quality", "best"))
+                    saved_dir = settings.get("output_directory")
+                    if saved_dir and os.path.isdir(saved_dir):
+                        self.output_directory = saved_dir
+        except Exception as e:
+            print(f"Error loading settings: {e}")
+            # Fallback to defaults
+
+    def save_settings(self):
+        """Saves current application settings to a JSON file."""
+        settings = {
+            "theme": self.current_theme.get(),
+            "download_quality": self.download_quality_var.get(),
+            "output_directory": self.output_directory
+        }
+        try:
+            with open(self.settings_file, "w") as f:
+                json.dump(settings, f, indent=4)
+        except Exception as e:
+            print(f"Error saving settings: {e}")
 
     def _load_icons(self):
         """Loads icon images from the 'icons' directory."""
         icon_names = [
             "app_icon", "paste_icon", "browse_icon", "download_icon",
             "video_icon", "audio_icon", "image_icon", "settings_icon",
-            "help_icon", "info_icon", "success_icon", "error_icon"
+            "help_icon", "info_icon", "success_icon", "error_icon",
+            "light_theme_icon", "dark_theme_icon" # New theme icons
         ]
         icons_dir = "icons"
         
@@ -62,7 +130,7 @@ class DownloaderApp:
             except Exception as e:
                 print(f"Error loading icon {name}: {e}")
                 self.icons[name] = None # Or a default blank image if you have one
-                messagebox.showwarning("Icon Missing", f"Could not load icon: {name}.png. Please ensure 'icon_generate.py' ran successfully.")
+                # messagebox.showwarning("Icon Missing", f"Could not load icon: {name}.png. Please ensure 'icon_generate.py' ran successfully.")
 
     def create_menu(self):
         """Creates the application's menu bar."""
@@ -79,132 +147,150 @@ class DownloaderApp:
         # Settings Menu
         settings_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Settings", menu=settings_menu)
-        settings_menu.add_command(label="Theme (Future Feature)") # Placeholder
-        settings_menu.add_command(label="Download Quality (Future Feature)") # Placeholder
+        
+        # Theme Submenu
+        theme_menu = tk.Menu(settings_menu, tearoff=0)
+        settings_menu.add_cascade(label="Theme", menu=theme_menu)
+        theme_menu.add_radiobutton(label="Light", variable=self.current_theme, value="light",
+                                   command=lambda: self.set_theme("light"),
+                                   image=self.icons.get("light_theme_icon"), compound=tk.LEFT)
+        theme_menu.add_radiobutton(label="Dark", variable=self.current_theme, value="dark",
+                                   command=lambda: self.set_theme("dark"),
+                                   image=self.icons.get("dark_theme_icon"), compound=tk.LEFT)
+
+        # Download Quality Submenu
+        quality_menu = tk.Menu(settings_menu, tearoff=0)
+        settings_menu.add_cascade(label="Download Quality", menu=quality_menu)
+        quality_menu.add_radiobutton(label="Best", variable=self.download_quality_var, value="best",
+                                     command=self.set_download_quality_option)
+        quality_menu.add_radiobutton(label="Medium", variable=self.download_quality_var, value="medium",
+                                     command=self.set_download_quality_option)
+        quality_menu.add_radiobutton(label="Low", variable=self.download_quality_var, value="low",
+                                     command=self.set_download_quality_option)
+
 
         # Help Menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="About", command=self.show_about_dialog)
+        help_menu.add_command(label="About", command=self.show_about_dialog,
+                              image=self.icons.get("info_icon"), compound=tk.LEFT)
 
     def show_about_dialog(self):
         """Displays an about dialog."""
         messagebox.showinfo(
             "About Universal Downloader",
             "Universal Downloader App v1.0\n\n"
-            "Developed by Gemini\n"
+            "Developed by Dannz\n"
             "This application allows you to download videos, audio, and images from various online sources."
         )
 
+    def set_theme(self, theme_name):
+        """Changes the application's theme."""
+        self.current_theme.set(theme_name)
+        self.apply_styles()
+        self.save_settings()
+        self.log_message(f"Theme set to: {theme_name.capitalize()}", "info")
+
+    def set_download_quality_option(self):
+        """Sets the download quality in the download manager and saves settings."""
+        quality = self.download_quality_var.get()
+        self.download_manager.set_download_quality(quality)
+        self.save_settings()
+        self.log_message(f"Download quality set to: {quality.capitalize()}", "info")
+
+
     def apply_styles(self):
         """Applies modern and appealing styles to Tkinter widgets."""
+        theme_colors = self.themes[self.current_theme.get()]
         style = ttk.Style()
         style.theme_use("clam") # A modern theme that allows customization
 
-        # Define a cohesive color palette
-        colors = {
-            "bg_light": "#e8f0f7",      # Very light blue-gray for main window
-            "bg_medium": "#dbe9f5",     # Slightly darker for frames
-            "bg_dark": "#c3d9eb",       # Even darker for some accents
-            "text_dark": "#2c3e50",     # Dark blue-gray for main text
-            "text_light": "#ffffff",    # White for text on dark backgrounds
-            "primary_blue": "#3498db",  # Standard blue for buttons/accents
-            "primary_blue_hover": "#2980b9", # Darker blue for hover
-            "success_green": "#2ecc71", # Green for success/progress
-            "error_red": "#e74c3c",     # Red for errors
-            "border_color": "#a7b8c9",  # Soft border color
-            "input_bg": "#ffffff",      # White for input fields
-            "log_bg": "#fdfefe",        # Off-white for log background
-            "gradient_start": "#4facfe", # For conceptual gradients
-            "gradient_end": "#00f2fe",   # For conceptual gradients
-        }
+        # Apply main window background
+        self.master.configure(bg=theme_colors["bg_app"])
 
         # General Frame and LabelFrame styles
-        style.configure("TFrame", background=colors["bg_medium"])
-        style.configure("TLabelFrame", background=colors["bg_medium"], foreground=colors["text_dark"],
-                        font=("Segoe UI", 11, "bold"), bordercolor=colors["border_color"], relief="flat",
-                        borderradius=10) # Conceptual rounded corners
-        style.map("TLabelFrame", bordercolor=[("active", colors["primary_blue"])])
+        style.configure("TFrame", background=theme_colors["bg_frame"])
+        style.configure("TLabelFrame", background=theme_colors["bg_frame"], foreground=theme_colors["text_primary"],
+                        font=("Segoe UI", 11, "bold"), bordercolor=theme_colors["border"], relief="flat")
+        style.map("TLabelFrame", bordercolor=[("active", theme_colors["button_primary"])])
 
         # Label styles
-        style.configure("TLabel", background=colors["bg_medium"], foreground=colors["text_dark"], font=("Segoe UI", 10))
+        style.configure("TLabel", background=theme_colors["bg_frame"], foreground=theme_colors["text_primary"], font=("Segoe UI", 10))
 
         # Button styles with more rounded corners and subtle shadow
         style.configure("TButton",
                         font=("Segoe UI", 10, "bold"),
-                        background=colors["primary_blue"],
-                        foreground=colors["text_light"],
+                        background=theme_colors["button_primary"],
+                        foreground=theme_colors["text_light"],
                         relief="flat",
                         padding=[12, 6], # Slightly more padding
                         focuscolor="none",
-                        bordercolor=colors["primary_blue"],
+                        bordercolor=theme_colors["button_primary"],
                         focusthickness=0,
-                        borderradius=8, # More rounded corners
+                        # borderradius=8, # Tkinter ttk doesn't directly support borderradius for TButton
                        )
         style.map("TButton",
-                  background=[("active", colors["primary_blue_hover"]), ("disabled", colors["bg_dark"])],
-                  foreground=[("active", colors["text_light"]), ("disabled", "#7f8c8d")],
+                  background=[("active", theme_colors["button_hover"]), ("disabled", theme_colors["bg_accent"])],
+                  foreground=[("active", theme_colors["text_light"]), ("disabled", theme_colors["text_primary"])],
                   relief=[("active", "raised"), ("!active", "flat")] # Subtle raised effect on hover
                  )
         
         # Entry and Combobox styles with more rounded corners
         style.configure("TEntry",
-                        fieldbackground=colors["input_bg"],
-                        foreground=colors["text_dark"],
-                        bordercolor=colors["border_color"],
+                        fieldbackground=theme_colors["input_bg"],
+                        foreground=theme_colors["text_primary"],
+                        bordercolor=theme_colors["border"],
                         relief="solid",
                         borderwidth=1,
                         padding=[8, 8], # More internal padding
                         font=("Segoe UI", 10),
-                        borderradius=8, # More rounded corners
+                        # borderradius=8, # Tkinter ttk doesn't directly support borderradius for TEntry
                        )
         style.map("TEntry",
-                  bordercolor=[("focus", colors["primary_blue"])]
+                  bordercolor=[("focus", theme_colors["button_primary"])]
                  )
 
         style.configure("TCombobox",
-                        fieldbackground=colors["input_bg"],
-                        foreground=colors["text_dark"],
-                        selectbackground=colors["primary_blue"],
-                        selectforeground=colors["text_light"],
-                        bordercolor=colors["border_color"],
+                        fieldbackground=theme_colors["input_bg"],
+                        foreground=theme_colors["text_primary"],
+                        selectbackground=theme_colors["button_primary"],
+                        selectforeground=theme_colors["text_light"],
+                        bordercolor=theme_colors["border"],
                         relief="solid",
                         borderwidth=1,
                         padding=[8, 8], # More internal padding
                         font=("Segoe UI", 10),
-                        borderradius=8, # More rounded corners
+                        # borderradius=8, # Tkinter ttk doesn't directly support borderradius for TCombobox
                        )
         style.map("TCombobox",
-                  fieldbackground=[("readonly", colors["input_bg"])],
-                  arrowcolor=[("!disabled", colors["primary_blue"])],
-                  bordercolor=[("focus", colors["primary_blue"])]
+                  fieldbackground=[("readonly", theme_colors["input_bg"])],
+                  arrowcolor=[("!disabled", theme_colors["button_primary"])],
+                  bordercolor=[("focus", theme_colors["button_primary"])]
                  )
 
         # Radiobutton styles
         style.configure("TRadiobutton",
-                        background=colors["bg_medium"],
-                        foreground=colors["text_dark"],
+                        background=theme_colors["bg_frame"],
+                        foreground=theme_colors["text_primary"],
                         font=("Segoe UI", 10),
-                        indicatorcolor=colors["primary_blue"],
-                        selectcolor=colors["primary_blue"],
+                        indicatorcolor=theme_colors["button_primary"],
+                        selectcolor=theme_colors["button_primary"],
                         focusthickness=0,
                         padding=[5, 5] # Add some padding around text
                        )
         style.map("TRadiobutton",
-                  background=[("active", colors["bg_dark"])],
-                  foreground=[("active", colors["text_dark"])]
+                  background=[("active", theme_colors["bg_accent"])],
+                  foreground=[("active", theme_colors["text_primary"])]
                  )
 
         # Progressbar styles with more visual depth
         style.configure("TProgressbar",
-                        background=colors["success_green"],
-                        troughcolor=colors["bg_dark"],
-                        bordercolor=colors["border_color"],
+                        background=theme_colors["success"],
+                        troughcolor=theme_colors["bg_accent"],
+                        bordercolor=theme_colors["border"],
                         thickness=20, # Thicker progress bar
                         relief="flat",
-                        borderradius=10, # Rounded ends
-                        lightcolor=colors["success_green"], # For gradient effect (conceptual)
-                        darkcolor=colors["success_green"], # For gradient effect (conceptual)
+                        # borderradius=10, # Tkinter ttk doesn't directly support borderradius for TProgressbar
                        )
         style.layout("TProgressbar",
                      [('progressbar.trough', {'children':
@@ -212,13 +298,11 @@ class DownloaderApp:
                        'sticky': 'nswe'})]) # Ensures pbar fills trough
 
         # Text widget styling (for log output)
-        self.log_text.tag_configure("info", foreground=colors["text_dark"], font=("Consolas", 9))
-        self.log_text.tag_configure("success", foreground=colors["success_green"], font=("Consolas", 9, "bold"))
-        self.log_text.tag_configure("error", foreground=colors["error_red"], font=("Consolas", 9, "bold"))
-        self.log_text.tag_configure("progress", foreground=colors["primary_blue"], font=("Consolas", 9))
-
-        # Apply main window background
-        self.master.configure(bg=colors["bg_light"])
+        self.log_text.config(bg=theme_colors["log_bg"], fg=theme_colors["text_primary"])
+        self.log_text.tag_configure("info", foreground=theme_colors["text_primary"])
+        self.log_text.tag_configure("success", foreground=theme_colors["success"])
+        self.log_text.tag_configure("error", foreground=theme_colors["error"])
+        self.log_text.tag_configure("progress", foreground=theme_colors["button_primary"])
 
 
     def create_widgets(self):
@@ -310,6 +394,7 @@ class DownloaderApp:
             self.output_dir_entry.insert(0, self.output_directory)
             self.output_dir_entry.config(state="readonly")
             self.log_message(f"Output directory set to: {self.output_directory}", "info")
+            self.save_settings() # Save updated output directory
 
     def start_download(self):
         """Initiates the download process in a separate thread."""

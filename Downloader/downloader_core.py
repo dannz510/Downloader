@@ -22,6 +22,11 @@ class DownloadManager:
         self.completion_callback = completion_callback
         self.error_callback = error_callback
         self.is_downloading = False # Flag to indicate if a download is in progress
+        self.download_quality = "best" # Default download quality
+
+    def set_download_quality(self, quality):
+        """Sets the desired download quality."""
+        self.download_quality = quality
 
     def _yt_dlp_hook(self, d):
         """
@@ -34,40 +39,76 @@ class DownloadManager:
         """
         Uses yt-dlp to download video or extract audio.
         """
+        # Define format based on download_type and selected quality
+        format_string = ""
+        if download_type == 'video':
+            if self.download_quality == "best":
+                format_string = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+            elif self.download_quality == "medium":
+                # Example: Prioritize 720p or 480p if available
+                format_string = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+            elif self.download_quality == "low":
+                # Example: Prioritize 360p or 240p
+                format_string = 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=240][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+            else: # Fallback to best if unknown quality
+                format_string = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+        elif download_type == 'audio':
+            # For audio, quality usually refers to bitrate
+            if self.download_quality == "best":
+                format_string = 'bestaudio/best'
+            elif self.download_quality == "medium":
+                format_string = 'bestaudio[abr<=192]/best' # Example: up to 192kbps
+            elif self.download_quality == "low":
+                format_string = 'bestaudio[abr<=128]/best' # Example: up to 128kbps
+            else:
+                format_string = 'bestaudio/best'
+
         ydl_opts = {
             'outtmpl': os.path.join(output_path, '%(title)s.%(ext)s'),
             'progress_hooks': [self._yt_dlp_hook],
             'retries': 3,
             'fragment_retries': 3,
             'ignoreerrors': True, # Continue on errors if possible
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best', # Default video format
+            'format': format_string,
         }
 
         if download_type == 'audio':
             ydl_opts.update({
-                'format': 'bestaudio/best',
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
-                    'preferredquality': '192',
+                    'preferredquality': '192', # This is a general preferred quality for extraction
                 }],
                 'extract_audio': True,
             })
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
-            if self.completion_callback:
-                # yt-dlp doesn't directly return the final file path easily via hooks for all cases.
-                # We can try to infer it or rely on the user to check the output directory.
-                # For simplicity, we'll just indicate completion here.
-                # A more robust solution would involve parsing the final_path from the hook 'd' dict.
-                self.completion_callback(f"Download complete for {url} (check {output_path})")
+                info = ydl.extract_info(url, download=True)
+                # Get the actual downloaded file path from the info dictionary
+                # This can be complex as yt-dlp might download multiple files or convert.
+                # For simplicity, we'll try to get the main filepath.
+                # A more robust solution would involve checking 'requested_downloads' or 'filepath'.
+                file_path = None
+                if 'requested_downloads' in info and info['requested_downloads']:
+                    file_path = info['requested_downloads'][0].get('filepath')
+                elif 'filepath' in info:
+                    file_path = info['filepath']
+                
+                if file_path and self.completion_callback:
+                    self.completion_callback(f"Download complete: {os.path.basename(file_path)}")
+                elif self.completion_callback:
+                    self.completion_callback(f"Download complete for {url} (check {output_path})")
+
+        except yt_dlp.utils.DownloadError as e:
+            if self.error_callback:
+                self.error_callback(f"Download Error for {url}: {e}")
         except Exception as e:
             if self.error_callback:
-                self.error_callback(f"Error downloading {url}: {e}")
+                self.error_callback(f"An unexpected error occurred downloading {url}: {e}")
         finally:
             self.is_downloading = False
+
 
     def _download_image(self, url, output_path):
         """
@@ -82,6 +123,8 @@ class DownloadManager:
             filename = os.path.basename(parsed_url.path)
             if not filename or '.' not in filename: # If no filename or no extension
                 filename = "downloaded_image.jpg" # Default to JPG
+            elif len(filename.split('.')[-1]) > 5: # If extension looks too long, might not be one
+                 filename = filename.split('.')[0] + ".jpg" # Force .jpg
 
             file_path = os.path.join(output_path, filename)
 
@@ -96,11 +139,20 @@ class DownloadManager:
                     downloaded_size += len(chunk)
                     if self.progress_callback:
                         # Simulate yt-dlp progress dict for consistency
+                        # yt-dlp uses _total_bytes_str, _downloaded_bytes_str, _percent_str, _speed_str, _eta_str
+                        # We'll calculate these for requests
+                        percent_str = f"{downloaded_size / total_size * 100:.1f}%" if total_size > 0 else "N/A%"
+                        downloaded_bytes_str = f"{downloaded_size / (1024*1024):.2f} MiB" if downloaded_size > 0 else "0 MiB"
+                        total_bytes_str = f"{total_size / (1024*1024):.2f} MiB" if total_size > 0 else "N/A MiB"
+
                         self.progress_callback({
                             'status': 'downloading',
                             'total_bytes': total_size,
                             'downloaded_bytes': downloaded_size,
-                            '_percent_str': f"{downloaded_size / total_size * 100:.1f}%" if total_size > 0 else "N/A",
+                            '_percent_str': percent_str,
+                            '_downloaded_bytes_str': downloaded_bytes_str,
+                            '_total_bytes_str': total_bytes_str,
+                            '_speed_str': 'N/A', # Requests doesn't provide speed easily
                             '_eta_str': 'N/A', # Requests doesn't provide ETA easily
                         })
             if self.completion_callback:
@@ -153,7 +205,7 @@ class DownloadManager:
 if __name__ == '__main__':
     def test_progress(d):
         if d['status'] == 'downloading':
-            print(f"Progress: {d['_percent_str']} of {d['_total_bytes_str']} at {d['_speed_str']} ETA {d['_eta_str']}")
+            print(f"Progress: {d.get('_percent_str', 'N/A')} of {d.get('_total_bytes_str', 'N/A')} at {d.get('_speed_str', 'N/A')} ETA {d.get('_eta_str', 'N/A')}")
         elif d['status'] == 'finished':
             print("Done downloading, converting...")
 
@@ -170,21 +222,20 @@ if __name__ == '__main__':
     os.makedirs(test_output_dir, exist_ok=True)
 
     print("--- Testing YouTube Video Download ---")
-    # Replace with an actual YouTube video URL for testing
+    # manager.set_download_quality("medium")
     # manager.download_content("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "video", test_output_dir)
-    # time.sleep(10) # Give it some time to start
+    # import time; time.sleep(10) # Give it some time to start
 
     print("\n--- Testing Image Download ---")
-    # Replace with an actual image URL for testing
     # manager.download_content("https://placehold.co/600x400/FF0000/FFFFFF/png?text=TestImage", "image", test_output_dir)
-    # time.sleep(10)
+    # import time; time.sleep(10)
 
     print("\n--- Testing TikTok Download (requires a valid TikTok URL) ---")
-    # TikTok URLs can be tricky and may require cookies or specific versions of yt-dlp.
     # manager.download_content("https://www.tiktok.com/@tiktok_user/video/1234567890", "video", test_output_dir)
-    # time.sleep(10)
+    # import time; time.sleep(10)
 
     # Keep the main thread alive for a bit to see background downloads
     # import time
     # time.sleep(60)
     print("Test script finished. Check 'downloads_test' folder for results.")
+
