@@ -47,18 +47,36 @@ A simple yet feature-rich desktop painting application built with Python's Tkint
 ## 📸 Screenshots
 
 ![Main window in dark theme](img1.png)
+
+
 _A clear view of the Universal Downloader's main interface with the dark theme enabled._
 
+---
+
 ![Tools tab](img2.png)
+
+
 _Overview of the various drawing tools available in the app._
 
+---
+
 ![Shapes tab](img3.png)
+
+
 _Demonstration of the different shapes that can be drawn, including the fill option._
 
+---
+
 ![Colors tab](img4.png)
+
+
 _The color selection interface, showing the color picker and palette._
 
+---
+
 ![Images import tab](img5.png)
+
+
 _The section for importing and transforming images on the canvas._
 
 ## 🚀 Installation
