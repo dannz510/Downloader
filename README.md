@@ -1,90 +1,35 @@
-# Python Paint App
+# Universal Downloader App
 
-A simple yet feature-rich desktop painting application built with Python's Tkinter and the Pillow library. This application provides a classic paint experience with modern UI elements, customizable themes, and essential drawing tools.
+A modern and intuitive desktop application built with Python's Tkinter and powerful backend libraries (`yt-dlp`, `requests`) for downloading various types of content from the web. Easily download videos, extract audio, or save images from supported URLs.
 
 ## ✨ Features
 
-* **Basic Drawing Tools:**
-    * Brush (round, square, airbrush types)
-    * Pencil
-    * Eraser
-    * Color Fill (Bucket tool)
-* **Shape Drawing:**
-    * Lines
-    * Rectangles
-    * Circles/Ovals
-    * Triangles
-    * Stars (5-point)
-    * Option to fill shapes with color.
-* **Color Management:**
-    * Color picker dialog.
-    * Pre-defined color palette for quick selection.
-    * Display of current drawing color.
-* **Image Manipulation:**
-    * Import existing images onto the canvas.
-    * Crop selected areas.
-    * Rotate (90°, 180°, 270°).
-    * Flip (horizontal, vertical).
-* **Text Tool:** Add text to the canvas with customizable font size.
-* **Selection Tool:** Rectangle selection for cropping.
-* **Zoom Functionality:** Zoom in/out using mouse wheel or predefined levels.
-* **View Options:**
-    * Toggle gridlines for precise drawing.
-    * Toggle rulers for measurement.
-* **Undo/Redo History:** Unlimited undo and redo functionality.
-* **File Operations:**
-    * New canvas.
-    * Save canvas as PNG or JPG.
-    * Load existing images.
-* **Customizable Settings:**
-    * Light and Dark themes.
-    * Adjustable canvas background color.
-    * Configurable default brush size.
-    * Settings persistence (saves theme, brush size, grid/ruler visibility).
-* **Responsive UI:** Adapts to window resizing.
-* **Status Bar:** Provides real-time feedback on cursor coordinates, selection size, zoom level, and tool messages.
+* **Universal URL Support:** Download content from popular platforms like YouTube, TikTok, and direct image links.
+* **Multiple Download Types:**
+    * **Video:** Download videos in the best available quality.
+    * **Audio:** Extract and download audio (MP3) from video or music links.
+    * **Image:** Download images directly from their URLs.
+* **Intuitive User Interface:** Clean, modern, and user-friendly design with a focus on ease of use.
+* **Clipboard Integration:** Quickly paste URLs from your clipboard.
+* **Customizable Output Directory:** Choose where your downloaded files are saved.
+* **Real-time Progress Tracking:** Monitor download progress with a progress bar and detailed status messages.
+* **Download Log:** View a comprehensive log of all download activities and messages.
+* **Responsive Design:** The application window is resizable and adapts gracefully.
+* **Custom Icons:** Features custom-generated icons for a polished look.
 
-## 📸 Screenshots
+## 📸 Screenshot
 
-![Main window in dark theme](img1.png)
+![Universal Downloader App Main Window](img.png)
+_A clear view of the Universal Downloader's main interface, showcasing its clean design and input fields._
 
-
-_A clear view of the Universal Downloader's main interface with the dark theme enabled._
-
----
-
-![Tools tab](img2.png)
-
-
-_Overview of the various drawing tools available in the app._
-
----
-
-![Shapes tab](img3.png)
-
-
-_Demonstration of the different shapes that can be drawn, including the fill option._
-
----
-
-![Colors tab](img4.png)
-
-
-_The color selection interface, showing the color picker and palette._
-
----
-
-![Images import tab](img5.png)
-
-
-_The section for importing and transforming images on the canvas._
+*(Ensure your screenshot file is named `img.png` and is located in the same directory as this `README.md` file in your GitHub repository.)*
 
 ## 🚀 Installation
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/your-username/python-paint-app.git](https://github.com/your-username/python-paint-app.git)
-    cd python-paint-app
+    git clone [https://github.com/your-username/universal-downloader.git](https://github.com/your-username/universal-downloader.git)
+    cd universal-downloader
     ```
 
 2.  **Create a virtual environment (recommended):**
@@ -98,7 +43,7 @@ _The section for importing and transforming images on the canvas._
 
 3.  **Install dependencies:**
     ```bash
-    pip install Pillow
+    pip install yt-dlp requests Pillow
     ```
 
 4.  **Generate Icons:**
@@ -114,29 +59,27 @@ _The section for importing and transforming images on the canvas._
     python main.py
     ```
 
-2.  **Explore the Interface:**
-    * The top section contains toolbars for **File**, **Edit**, **Tools**, **Brush Options**, **Shapes**, **Colors**, **Image**, **View**, and **Settings**.
-    * Click on tool buttons to select drawing modes (Brush, Eraser, Pencil, Fill, Text, Color Picker, Zoom, Selection).
-    * Choose shapes (Line, Rectangle, Circle, Triangle, Star) from the "Shapes" section.
-    * Adjust brush size using the slider and brush type using the dropdown.
-    * Select colors from the palette or use the "Pick Color" button.
-    * Use "Import" to load images, "Crop" to crop selections, and "Transform" for rotations/flips.
-    * In the "View" section, toggle gridlines and rulers, and adjust zoom.
-    * Under "Settings", switch themes or change canvas properties.
-    * The bottom status bar provides real-time information.
+2.  **Paste URL:**
+    * Copy a video (YouTube, TikTok), music, or direct image URL to your clipboard.
+    * Click the "Paste" button next to the "Content URL" input field, or simply type/paste the URL directly.
 
-3.  **Drawing:**
-    * Select a tool/shape and click/drag on the canvas.
-    * For text, select the "Text" tool, click on the canvas, and enter your text in the dialog.
-    * Use `Ctrl+Z` for Undo and `Ctrl+Y` for Redo (or the buttons in the "Edit" section).
+3.  **Select Download Type:**
+    * Choose between "Video", "Audio", or "Image" using the radio buttons, depending on the content you want to download.
 
-## ⚙️ Customization
+4.  **Choose Output Directory (Optional):**
+    * By default, files will be saved in a `UniversalDownloads` folder within your system's "Downloads" directory.
+    * Click "Browse" to select a different output folder if desired.
 
-* **Themes:** Switch between "Light Theme" and "Dark Theme" from the "Settings" section.
-* **Canvas Background:** Change the canvas background color via the "Canvas Color" button in "Settings".
-* **Default Brush Size:** The application remembers your last used brush size.
-* **Gridlines & Rulers:** Toggle their visibility from the "View" section.
-* **`paint_settings.json`:** The application saves user preferences (theme, default brush size, canvas background, grid/ruler visibility) in a `paint_settings.json` file in the application directory. You can manually edit this file, but it's generally recommended to use the in-app settings.
+5.  **Start Download:**
+    * Click the "Start Download" button.
+    * Monitor the progress bar and the "Download Log" for real-time updates.
+
+## ⚙️ Customization (Future Features)
+
+The application includes placeholders for future customization options via the "Settings" menu, such as:
+
+* **Theme Selection:** Switch between different UI themes (e.g., Light/Dark).
+* **Download Quality:** Choose specific video or audio quality settings.
 
 ## 🤝 Contributing
 
@@ -156,6 +99,6 @@ This project is licensed under the MIT License - see the `LICENSE` file for deta
 ## 🙏 Acknowledgments
 
 * [Tkinter](https://docs.python.org/3/library/tkinter.html) - The standard Python interface to the Tcl/Tk GUI toolkit.
-* [Pillow (PIL Fork)](https://python-pillow.org/) - The friendly PIL fork for image manipulation.
-* [yt-dlp](https://github.com/yt-dlp/yt-dlp) - (If you integrate the downloader core, otherwise remove this) For robust video/audio downloading.
-* [requests](https://requests.readthedocs.io/en/latest/) - (If you integrate the downloader core, otherwise remove this) For handling HTTP requests.
+* [Pillow (PIL Fork)](https://python-pillow.org/) - For image manipulation and icon generation.
+* [yt-dlp](https://github.com/yt-dlp/yt-dlp) - For robust video and audio downloading from various sites.
+* [requests](https://requests.readthedocs.io/en/latest/) - For handling HTTP requests, especially for direct image downloads.
